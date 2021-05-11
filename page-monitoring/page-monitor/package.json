@@ -1,0 +1,56 @@
+{
+  "_from": "page-monitor",
+  "_id": "page-monitor@0.5.4",
+  "_inBundle": false,
+  "_integrity": "sha1-BM0Nx6CLGp4hbdQbRogeyBmQRHc=",
+  "_location": "/page-monitor",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "page-monitor",
+    "name": "page-monitor",
+    "escapedName": "page-monitor",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "https://registry.npmjs.org/page-monitor/-/page-monitor-0.5.4.tgz",
+  "_shasum": "04cd0dc7a08b1a9e216dd41b46881ec819904477",
+  "_spec": "page-monitor",
+  "_where": "C:\\Users\\admin\\Desktop",
+  "author": {
+    "name": "fouber",
+    "email": "fouber.NET@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/fouber/page-monitor/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "phantomjs": "~1.9.16"
+  },
+  "deprecated": false,
+  "description": "monitor pages and diff the dom change with phantomjs",
+  "homepage": "https://github.com/fouber/page-monitor",
+  "keywords": [
+    "monitor",
+    "phantomjs",
+    "phantom",
+    "diff"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "name": "page-monitor",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fouber/page-monitor.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "0.5.4"
+}

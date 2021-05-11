@@ -1,0 +1,13 @@
+{
+  "admin":{
+    "email": "natuan9@monre.gov.vn",
+    "pass": "123456"
+  },
+  "mysql": {
+    "host": "localhost",
+    "user": "root",
+    "pass": "",
+    "db": "page_monitor"
+  },
+  "cron-duration": "0 * * * * *"
+}

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html style="height: 100%;">
+<head>
+  <title>Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="height: 100%;">
+  <div id="app" v-show="ready" class="w3-row" style="height: 100%; display: none; background-color: #f5f5f4;">
+    <div v-if="logedin" style="height: 100%;">
+      <div class="w3-container w3-teal w3-center">
+        <img src="assets/img/logona1.png" style="width:200px" alt="Avatar" style="width:30%" class="w3-margin-top">
+        <h2>Web monitoring</h2>
+        <em>Công cụ giám sát sự thay đổi nội dung Website Hệ thống Dữ liệu Cảnh báo dự báo tài nguyên nước Quốc gia</em>
+      </div>
+      <table class="w3-table w3-twothird w3-bordered w3-striped w3-border test w3-hoverable">
+        <thead>
+        <tr class="w3-green">
+          <th>Thông báo <button @click="clearNotification()" class="w3-btn w3-red">Xoá hết</button></th>
+          <th>Hình ảnh</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="notification in notifications" :style="[(parseInt(notification[2]) ? {} : {'background-color': '#f7baba'})]">
+          <td>{{notification[0]}} <button @click="deleteNotification(notification)" class="w3-btn w3-red">Xoá</button></td>
+          <td><a :href="baseURL+'/view/'+encodeURIComponent(notification[1].screenshot)+'?token='+encodeURIComponent(getAccessToken())" target="_blank"><img width="100px" :src="baseURL+'/view/'+encodeURIComponent(notification[1].screenshot)+'?token='+encodeURIComponent(getAccessToken())" /></a></td>
+        </tr>
+        </tbody>
+      </table>
+      <div class="w3-third">
+      <table class="w3-table w3-bordered w3-striped w3-border test w3-hoverable">
+        <thead>
+        <tr class="w3-blue">
+          <th>URL</th>
+          <th>Hành động</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="site in sites">
+          <td>{{site.value}}</td>
+          <td><button @click="deleteSite(site)" class="w3-btn w3-padding w3-teal">Xoá</button></td>
+        </tr>
+        </tbody>
+      </table>
+      <hr />
+      <form @submit.prevent="addSite()" class="w3-container w3-card-4" style="background-color: #fff;">
+        <div @click="addSite()" class="w3-teal w3-center">
+          <h6>Thêm site</h6>
+        </div>
+        <p>
+        <label class="w3-text-grey">URL</label>
+        <input class="w3-input w3-border" required="" v-model.trim="siteUrl" type="text" placeholder="Enter site url">
+        <input type="submit" style="display:none" />
+        </p>
+        <div class="w3-panel w3-red w3-display-container" v-show="errorText != ''">
+          <span @click="errorText=''" class="w3-button w3-red w3-large w3-display-topright">×</span>
+          <h3>Lỗi</h3>
+          <p>{{errorText}}</p>
+        </div>
+        </div>
+      </form>
+    </div>
+    <div v-else style="margin: 0 auto; padding-top: 70px; float: none !important;" class="w3-col l5 m7 s10">
+      <div class="w3-container w3-teal w3-center">
+        <img src="assets/img/logona2.jpg" alt="Avatar" style="width:30%" class="w3-circle w3-margin-top">
+        <h2>Please Login</h2>
+      </div>
+      <form @submit.prevent="validateLogin()" class="w3-container w3-card-4" style="background-color: #fff;">
+        <br>
+        <p>      
+        <label class="w3-text-grey">Email</label>
+        <input class="w3-input w3-border" required="" v-model.trim="email" type="email" placeholder="Enter email">
+        </p>
+        <p>      
+        <label class="w3-text-grey">Password</label>
+        <input class="w3-input w3-border" v-model="pass" type="password" placeholder="Enter password" required="">
+        </p>
+        <p>
+          <button class="w3-btn w3-padding w3-teal" type="button" disabled v-if="doingLogin">Loging in..</button>
+          <button class="w3-btn w3-padding w3-teal" type="submit" @click="validateLogin()" v-else>Login &nbsp; ❯</button>
+        </p>
+        <div class="w3-panel w3-red w3-display-container" v-show="errorText != ''">
+          <span onclick="this.parentElement.style.display='none'" class="w3-button w3-red w3-large w3-display-topright">×</span>
+          <h3>Lỗi</h3>
+          <p>{{errorText}}</p>
+        </div>
+      </form>
+    </div>
+  </div>
+<script src="assets/js/eventsource.min.js"></script>
+<script src="assets/js/vue.min.js"></script>
+<script src="assets/js/fetch.min.js"></script>
+<script>
+var baseURL = location.protocol+'//'+location.hostname+':3000';
+var app = new Vue({
+  el: '#app',
+  data: {
+    baseURL: baseURL,
+    logedin: false,
+    email: '',
+    pass: '',
+    errorText: '',
+    doingLogin: false,
+    ready: false,
+    notifications: [],
+    sites: [],
+    siteUrl: ''
+  },
+  mounted: function (){
+    var self = this;
+    console.log('app: restoring state..');
+    try{
+      var data = localStorage.getItem('__app_mt_state');
+      data = JSON.parse(data);
+      for(var key in data){
+        if(!['email', 'pass'].includes(key)) continue;
+        self[key] = data[key];
+      }
+      console.log('app: state restored');
+    }catch(e){
+      console.log('app: error restore state: ', e);
+    }
+
+    window.addEventListener("beforeunload", function (e){
+      try{
+        console.log('app: halt.');
+        if(!self.halt())
+          return false;
+      }catch(e){}
+      var confirmationMessage = "\\o/";
+      try{
+        e.preventDefault();
+      }catch(e){}
+      e.returnValue = confirmationMessage;     // Gecko, Trident, Chrome 34+
+      return confirmationMessage;              // Gecko, WebKit, Chrome <34
+    });
+    this.ready = true;
+    if(this.email && this.pass){
+      this.validateLogin();
+    }
+    window.onfocus = function (){
+      setTimeout(function (){
+        self.notifications.forEach(function (notification){
+          self.$set(notification, 2, 1);
+        });
+      }, 5000);
+    };
+  },
+  methods: {
+	deleteNotification: function (n){
+	var self = this
+		function localDel (){
+			var index = self.notifications.indexOf(n)
+			if(~index)
+				self.notifications.splice(index, 1)
+		}
+	  if(!n[3]){
+		localDel()
+		return
+	  }
+      fetch('/notification/'+n[3], {
+        method: "DELETE",
+        mode: "cors",
+        cache: "no-cache",
+        credentials: "same-origin",
+        headers: {
+          "X-Token": this.getAccessToken(),
+        },
+        redirect: "follow",
+	  }).then(function (r){
+		if(!r.ok)
+          throw new Error('Network response was not ok.');
+        return r.json();
+      }).then(function (json){
+        if(json.success){
+			localDel()
+          return;
+        }
+      }).catch(function (e){
+		console.error(e)
+      });
+	},
+    clearNotification: function (){
+      if(!confirm('Xoá hết thông báo?')) return;
+      var self = this;
+      self.errorText = '';
+      fetch('/notifications', {
+        method: "DELETE",
+        mode: "cors",
+        cache: "no-cache",
+        credentials: "same-origin",
+        headers: {
+          "X-Token": this.getAccessToken(),
+        },
+        redirect: "follow",
+      }).then(function (r){
+        if(!r.ok)
+          throw new Error('Network response was not ok.');
+        return r.json();
+      }).then(function (json){
+        if(json.success){
+          self.notifications = [];
+          return;
+        }
+        self.errorText = json.error||'Không thể xoá hết notifications.';
+      }).catch(function (e){
+        self.errorText = e.message||'Lỗi.';
+      });
+    },
+    deleteSite: function (site){
+      if(!confirm('Xoá "'+site.value+'" ?')) return;
+      var self = this;
+      self.errorText = '';
+      fetch('/sites/'+encodeURIComponent(site.id), {
+        method: "DELETE",
+        mode: "cors",
+        cache: "no-cache",
+        credentials: "same-origin",
+        headers: {
+          "X-Token": this.getAccessToken(),
+        },
+        redirect: "follow",
+      }).then(function (r){
+        if(!r.ok)
+          throw new Error('Network response was not ok.');
+        return r.json();
+      }).then(function (json){
+        if(json.success){
+          self.sites = self.sites.filter(function (s){
+            return site.id !== s.id;
+          });
+          return;
+        }
+        self.errorText = json.error||'Không thể xoá site.';
+      }).catch(function (e){
+        self.errorText = e.message||'Lỗi.';
+      });
+    },
+    updateSites: function (){
+      var self = this;
+      self.errorText = '';
+      fetch('/sites', {
+        method: "GET",
+        mode: "cors",
+        cache: "no-cache",
+        credentials: "same-origin",
+        headers: {
+          "X-Token": this.getAccessToken(),
+        },
+        redirect: "follow",
+      }).then(function (r){
+        if(!r.ok)
+          throw new Error('Network response was not ok.');
+        return r.json();
+      }).then(function (json){
+        if(json.success){
+          self.sites = json.success||[];
+          return;
+        }
+        self.errorText = json.error||'Không thể lấy danh sách sites.';
+      }).catch(function (e){
+        self.errorText = e.message||'Lỗi.';
+      });
+    },
+    addSite: function (){
+      var self = this;
+      self.errorText = '';
+      if(!self.siteUrl){
+        self.errorText = 'Chưa nhập url.';
+        return;
+      }
+      fetch('/sites/'+encodeURIComponent(self.siteUrl), {
+        method: "POST",
+        mode: "cors",
+        cache: "no-cache",
+        credentials: "same-origin",
+        headers: {
+          "X-Token": this.getAccessToken(),
+        },
+        redirect: "follow",
+      }).then(function (r){
+        if(!r.ok)
+          throw new Error('Network response was not ok.');
+        return r.json();
+      }).then(function (json){
+        if(json.success){
+          self.siteUrl = '';
+          self.updateSites();
+          return;
+        }
+        self.errorText = json.error||'Không thể thêm site.';
+      }).catch(function (e){
+        self.errorText = e.message||'Lỗi.';
+      });
+    },
+    validateLogin: function (){
+      if(this.doingLogin) return;
+      this.doingLogin = true;
+      this.errorText = '';
+      this.logedin = false;
+      var self = this;
+      fetch('/login', {
+        method: "GET",
+        mode: "cors",
+        cache: "no-cache",
+        credentials: "same-origin",
+        headers: {
+          "X-Token": this.getAccessToken(),
+        },
+        redirect: "follow",
+      }).then(function (r){
+        self.doingLogin = false;
+        if(!r.ok)
+          throw new Error('Network response was not ok.');
+        return r.json();
+      }).then(function (json){
+        if(json.success){
+          self.logedin = true;
+          self.eventSourceClient(baseURL+'/notifications?token='+encodeURIComponent(self.getAccessToken()));
+          self.updateSites();
+          return;
+        }
+        self.errorText = json.error||'Đăng nhập không thành công.';
+      }).catch(function (e){
+        self.doingLogin = false;
+      });
+    },
+    logout: function (){
+      this.email = '';
+      this.pass = '';
+      this.logedin = false;
+    },
+    getAccessToken: function (){
+      return btoa(JSON.stringify({email: this.email, pass: this.pass}));
+    },
+    eventSourceClient: function (url){
+      var self = this;
+      var evtSource = new EventSource(url, {withCredentials: 'include'});
+      evtSource.onopen = function (){
+        console.log("EventSource: connected");
+        self.notifications = [];
+      };
+      // eventListener
+      evtSource.addEventListener("noti", function (e) {
+        try{
+          var data = JSON.parse(e.data);
+          if(data instanceof Array){
+            data[1] = JSON.parse(data[1]);
+            self.notifications.unshift(data);
+            if(document.hasFocus()){
+              setTimeout(function (){
+                self.$set(data, 2, 1);
+              }, 5000);
+            }
+          }
+        }catch(e){
+          console.error('EventSource error: ', e);
+        }
+      }, false);
+      //
+      evtSource.onerror = function (e){
+        console.error(e);
+      };
+      return evtSource;
+    },
+    halt: function (){
+      var self = this;
+      var saveObject = {};
+      ['email', 'pass'].forEach(function (k){ saveObject[k] = self[k]; });
+      localStorage.setItem('__app_mt_state', JSON.stringify(saveObject), function (e){ e?console.log('app: saved state error ', e):console.log('app: state saved.'); });
+      return false;
+    }
+  }
+});
+</script>
+<link rel="stylesheet" href="assets/css/w3.css" />
+<link rel="stylesheet" href="assets/css/styles.css" />
+</body>
+</html>
