@@ -58,7 +58,7 @@ NGUYỄN ANH TUẤN - CB180204
     * Theo mặc định, phần mềm NPM cũng được cài đặt vào hệ thống. Đây là một phần mềm quản lý các thư viện Javascript.
 
 # <a name='f'></a>Cấu hình mã nguồn
-  Bước 1: đăng nhập vào phpmyadmin, tạo cơ sở dữ liệu tên 'page_monitor', import tệp tin 'setting.sql' vào cơ sở dữ liệu vừa tạo
+  Bước 1: đăng nhập vào phpmyadmin, tạo cơ sở dữ liệu tên 'page_monitor', import tệp tin 'setting.sql' hoặc 'page_monitor.sql' vào cơ sở dữ liệu vừa tạo
 
   Bước 2: mở tệp tin config.json tạo tài khoản quản trị và điền tài khoản đăng nhập cơ sở dữ liệu
   ![Cấu hình mã nguồn công cụ](/img/2.png)
