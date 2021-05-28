@@ -63,7 +63,23 @@ NGUYỄN ANH TUẤN - CB180204
   Bước 2: mở tệp tin config.json tạo tài khoản quản trị và điền tài khoản đăng nhập cơ sở dữ liệu
   ![Cấu hình mã nguồn công cụ](/img/2.png)
 
-    Cấu hình mã nguồn công cụ
+  ### Cấu hình mã nguồn công cụ
+    
+    ```
+    {
+       "admin":{
+          "email":"natuan9@monre.gov.vn",
+          "pass":"123456"
+       },
+       "mysql":{
+          "host":"localhost",
+          "user":"root",
+          "pass":"",
+          "db":"page_monitor"
+       },
+       "cron-duration":"0 * * * * *"
+    }
+    ```
 # <a name='g'></a>Khởi tạo phiên làm việc
 
   1.	Khởi tạo môi trường
